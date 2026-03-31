@@ -574,6 +574,19 @@
         <label>메모</label>
         <textarea id="edit-memo" placeholder="메모"></textarea>
       </div>
+      <div class="form-group full">
+        <label>사진 변경 (선택)</label>
+        <div id="editCurrentPhoto" style="margin-bottom:8px;display:none">
+          <img id="editCurrentPhotoImg" style="max-height:100px;border-radius:8px;object-fit:cover" />
+          <button type="button" class="btn btn-danger btn-sm" style="margin-left:8px;vertical-align:top" onclick="removeEditPhoto()">사진 삭제</button>
+        </div>
+        <div class="photo-upload-area" onclick="document.getElementById('edit-photo').click()">
+          <input type="file" id="edit-photo" accept="image/*" onchange="previewEditPhoto(this)" style="display:none" />
+          <div class="upload-hint" id="editPhotoHint">📷 클릭하여 새 사진 선택</div>
+          <img id="editPhotoPreview" class="photo-preview-img" style="display:none" />
+        </div>
+        <button type="button" id="btnClearEditPhoto" class="btn btn-secondary btn-sm" style="display:none;margin-top:6px;width:fit-content" onclick="clearEditPhoto()">선택 취소</button>
+      </div>
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" id="btnConfirmEdit" onclick="confirmEditCheckout()">저장</button>
@@ -968,7 +981,41 @@ window.openEditCheckoutModal = function(id) {
   document.getElementById('edit-checkoutDate').value = c.checkoutDate || '';
   document.getElementById('edit-returnDate').value = c.returnDate || '';
   document.getElementById('edit-memo').value = c.memo || '';
+  // 기존 사진 표시
+  clearEditPhoto();
+  if (c.photo) {
+    document.getElementById('editCurrentPhotoImg').src = c.photo;
+    document.getElementById('editCurrentPhoto').style.display = 'block';
+  } else {
+    document.getElementById('editCurrentPhoto').style.display = 'none';
+  }
   document.getElementById('editCheckoutModal').classList.add('open');
+};
+
+window.previewEditPhoto = function(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('editPhotoPreview').src = e.target.result;
+    document.getElementById('editPhotoPreview').style.display = 'block';
+    document.getElementById('editPhotoHint').style.display = 'none';
+    document.getElementById('btnClearEditPhoto').style.display = 'inline-block';
+  };
+  reader.readAsDataURL(file);
+};
+
+window.clearEditPhoto = function() {
+  document.getElementById('edit-photo').value = '';
+  document.getElementById('editPhotoPreview').src = '';
+  document.getElementById('editPhotoPreview').style.display = 'none';
+  document.getElementById('editPhotoHint').style.display = 'block';
+  document.getElementById('btnClearEditPhoto').style.display = 'none';
+};
+
+window.removeEditPhoto = function() {
+  document.getElementById('editCurrentPhoto').style.display = 'none';
+  document.getElementById('editCurrentPhotoImg').src = '';
 };
 
 window.confirmEditCheckout = async function() {
@@ -977,12 +1024,24 @@ window.confirmEditCheckout = async function() {
   if (!person || !checkoutDate) { toast('반출자와 반출일은 필수입니다.', '#e53e3e'); return; }
   setLoading('btnConfirmEdit', true);
   try {
+    // 사진 처리: 새 파일 선택 > 기존 유지 or 삭제
+    const newPhotoFile = document.getElementById('edit-photo').files[0];
+    let photo;
+    if (newPhotoFile) {
+      photo = await compressImage(newPhotoFile); // 새 사진으로 교체
+    } else if (document.getElementById('editCurrentPhoto').style.display === 'none') {
+      photo = ''; // 사진 삭제
+    } else {
+      photo = checkouts.find(x => x.id === pendingEditId)?.photo || ''; // 기존 유지
+    }
+
     await updateDoc(doc(db, 'checkouts', pendingEditId), {
       person,
       purpose: document.getElementById('edit-purpose').value.trim(),
       checkoutDate,
       returnDate: document.getElementById('edit-returnDate').value || '',
       memo: document.getElementById('edit-memo').value.trim(),
+      photo,
     });
     closeModal('editCheckoutModal');
     toast('✅ 수정되었습니다.');
