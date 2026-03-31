@@ -545,6 +545,43 @@
   </div>
 </div>
 
+<!-- 반출 수정 모달 -->
+<div class="modal-bg" id="editCheckoutModal">
+  <div class="modal">
+    <h3>✏️ 반출 정보 수정</h3>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>자산명</label>
+        <input id="edit-assetName" disabled />
+      </div>
+      <div class="form-group">
+        <label>반출자 *</label>
+        <input id="edit-person" placeholder="이름" />
+      </div>
+      <div class="form-group">
+        <label>반출 목적</label>
+        <input id="edit-purpose" placeholder="예) 외근, 재택근무, 출장" />
+      </div>
+      <div class="form-group">
+        <label>반출일 *</label>
+        <input id="edit-checkoutDate" type="date" />
+      </div>
+      <div class="form-group">
+        <label>반납 예정일</label>
+        <input id="edit-returnDate" type="date" />
+      </div>
+      <div class="form-group full">
+        <label>메모</label>
+        <textarea id="edit-memo" placeholder="메모"></textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnConfirmEdit" onclick="confirmEditCheckout()">저장</button>
+      <button class="btn btn-secondary" onclick="closeModal('editCheckoutModal')">취소</button>
+    </div>
+  </div>
+</div>
+
 <!-- 사진 뷰어 모달 -->
 <div class="modal-bg" id="photoModal">
   <div class="modal" style="max-width:600px">
@@ -912,10 +949,48 @@ window.renderCheckouts = function() {
       <td class="memo-text" title="${esc(c.memo)}">${esc(c.memo) || '-'}</td>
       <td style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-success btn-sm" onclick="openReturnModal('${c.id}')">반납</button>
+        <button class="btn btn-primary btn-sm" onclick="openEditCheckoutModal('${c.id}')">수정</button>
         <button class="btn btn-secondary btn-sm" onclick="openStickerModal('${c.id}')">스티커</button>
       </td>
     </tr>`;
   }).join('');
+};
+
+// 반출 수정 모달
+let pendingEditId = null;
+window.openEditCheckoutModal = function(id) {
+  pendingEditId = id;
+  const c = checkouts.find(x => x.id === id);
+  const a = assets.find(x => x.id === c?.assetId);
+  document.getElementById('edit-assetName').value = a ? `[${a.type}] ${a.name}` : '';
+  document.getElementById('edit-person').value = c.person || '';
+  document.getElementById('edit-purpose').value = c.purpose || '';
+  document.getElementById('edit-checkoutDate').value = c.checkoutDate || '';
+  document.getElementById('edit-returnDate').value = c.returnDate || '';
+  document.getElementById('edit-memo').value = c.memo || '';
+  document.getElementById('editCheckoutModal').classList.add('open');
+};
+
+window.confirmEditCheckout = async function() {
+  const person = document.getElementById('edit-person').value.trim();
+  const checkoutDate = document.getElementById('edit-checkoutDate').value;
+  if (!person || !checkoutDate) { toast('반출자와 반출일은 필수입니다.', '#e53e3e'); return; }
+  setLoading('btnConfirmEdit', true);
+  try {
+    await updateDoc(doc(db, 'checkouts', pendingEditId), {
+      person,
+      purpose: document.getElementById('edit-purpose').value.trim(),
+      checkoutDate,
+      returnDate: document.getElementById('edit-returnDate').value || '',
+      memo: document.getElementById('edit-memo').value.trim(),
+    });
+    closeModal('editCheckoutModal');
+    toast('✅ 수정되었습니다.');
+  } catch(e) {
+    toast('오류: ' + e.message, '#e53e3e');
+  } finally {
+    setLoading('btnConfirmEdit', false);
+  }
 };
 
 // 반납 모달
