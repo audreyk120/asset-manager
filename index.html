@@ -269,6 +269,38 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* 사진 관련 */
+    .photo-upload-area {
+      border: 2px dashed #d1d5db;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      background: #fafafa;
+      position: relative;
+    }
+    .photo-upload-area:hover { border-color: #1a56db; background: #f0f5ff; }
+    .photo-upload-area input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .photo-upload-area .upload-hint { color: #888; font-size: 0.85rem; pointer-events: none; }
+    .photo-preview-img {
+      max-width: 100%; max-height: 160px; border-radius: 8px;
+      object-fit: cover; display: block; margin: 0 auto;
+    }
+    .thumb {
+      width: 44px; height: 44px; object-fit: cover;
+      border-radius: 6px; cursor: pointer;
+      border: 1px solid #e2e8f0;
+      transition: transform 0.15s;
+    }
+    .thumb:hover { transform: scale(1.1); }
+    .photo-modal-img {
+      max-width: 100%; max-height: 70vh;
+      border-radius: 10px; display: block; margin: 0 auto;
+    }
+
     @media (max-width: 600px) {
       main { padding: 12px; }
       nav button { padding: 12px 12px; font-size: 0.85rem; }
@@ -405,6 +437,15 @@
           <label>메모 (스티커 내용 등)</label>
           <textarea id="co-memo" placeholder="반출 관련 메모, 스티커에 붙일 내용 등을 입력하세요"></textarea>
         </div>
+        <div class="form-group full">
+          <label>반출 사진 (선택)</label>
+          <div class="photo-upload-area" id="coPhotoArea" onclick="document.getElementById('co-photo').click()">
+            <input type="file" id="co-photo" accept="image/*" onchange="previewPhoto(this)" style="display:none" />
+            <div class="upload-hint" id="coPhotoHint">📷 클릭하여 사진 선택 (자동 압축됨)</div>
+            <img id="coPhotoPreview" class="photo-preview-img" style="display:none" />
+          </div>
+          <button type="button" id="btnClearPhoto" class="btn btn-secondary btn-sm" style="display:none;margin-top:6px;width:fit-content" onclick="clearPhoto()">사진 제거</button>
+        </div>
       </div>
       <div class="btn-row">
         <button class="btn btn-primary" id="btnAddCheckout" onclick="addCheckout()">반출 등록</button>
@@ -418,7 +459,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>자산명</th><th>종류</th><th>반출자</th><th>목적</th><th>반출일</th><th>반납예정일</th><th>상태</th><th>메모</th><th>작업</th></tr></thead>
+          <thead><tr><th>사진</th><th>자산명</th><th>종류</th><th>반출자</th><th>목적</th><th>반출일</th><th>반납예정일</th><th>상태</th><th>메모</th><th>작업</th></tr></thead>
           <tbody id="checkoutBody"></tbody>
         </table>
       </div>
@@ -438,7 +479,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>자산명</th><th>종류</th><th>반출자</th><th>목적</th><th>반출일</th><th>반납예정일</th><th>실제반납일</th><th>상태</th><th>메모</th></tr></thead>
+          <thead><tr><th>사진</th><th>자산명</th><th>종류</th><th>반출자</th><th>목적</th><th>반출일</th><th>반납예정일</th><th>실제반납일</th><th>상태</th><th>메모</th></tr></thead>
           <tbody id="historyBody"></tbody>
         </table>
       </div>
@@ -500,6 +541,17 @@
     <div class="btn-row">
       <button class="btn btn-primary" onclick="printSticker()">인쇄</button>
       <button class="btn btn-secondary" onclick="closeModal('stickerModal')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 사진 뷰어 모달 -->
+<div class="modal-bg" id="photoModal">
+  <div class="modal" style="max-width:600px">
+    <h3>📷 반출 사진</h3>
+    <img id="photoModalImg" class="photo-modal-img" src="" />
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal('photoModal')">닫기</button>
     </div>
   </div>
 </div>
@@ -582,6 +634,55 @@ function setLoading(btnId, loading) {
   const btn = document.getElementById(btnId);
   if (btn) btn.disabled = loading;
 }
+
+// ───────────────────────────────────────────
+// 이미지 압축 (Canvas, max 800px, JPEG 0.75)
+// ───────────────────────────────────────────
+function compressImage(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 800;
+        let w = img.width, h = img.height;
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.75));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+window.previewPhoto = function(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('coPhotoPreview').src = e.target.result;
+    document.getElementById('coPhotoPreview').style.display = 'block';
+    document.getElementById('coPhotoHint').style.display = 'none';
+    document.getElementById('btnClearPhoto').style.display = 'inline-block';
+  };
+  reader.readAsDataURL(file);
+};
+
+window.clearPhoto = function() {
+  document.getElementById('co-photo').value = '';
+  document.getElementById('coPhotoPreview').src = '';
+  document.getElementById('coPhotoPreview').style.display = 'none';
+  document.getElementById('coPhotoHint').style.display = 'block';
+  document.getElementById('btnClearPhoto').style.display = 'none';
+};
+
+window.openPhotoModal = function(src) {
+  document.getElementById('photoModalImg').src = src;
+  document.getElementById('photoModal').classList.add('open');
+};
 
 function getAssetStatus(assetId) {
   const active = checkouts.find(c => c.assetId === assetId && !c.returnedAt);
@@ -751,6 +852,10 @@ window.addCheckout = async function() {
 
   setLoading('btnAddCheckout', true);
   try {
+    // 사진 압축
+    const photoFile = document.getElementById('co-photo').files[0];
+    const photoBase64 = photoFile ? await compressImage(photoFile) : '';
+
     await addDoc(collection(db, 'checkouts'), {
       assetId,
       person,
@@ -758,12 +863,14 @@ window.addCheckout = async function() {
       checkoutDate: coDate,
       returnDate: document.getElementById('co-return').value || '',
       memo: document.getElementById('co-memo').value.trim(),
+      photo: photoBase64,
       returnedAt: null,
       returnMemo: '',
       createdAt: today(),
     });
     ['co-person','co-purpose','co-memo'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('co-asset').value = '';
+    clearPhoto();
     toast('✅ 반출이 등록되었습니다.');
   } catch(e) {
     toast('오류: ' + e.message, '#e53e3e');
@@ -790,7 +897,11 @@ window.renderCheckouts = function() {
   tbody.innerHTML = list.map(c => {
     const a = assets.find(x => x.id === c.assetId);
     const isOverdue = c.returnDate && c.returnDate < today();
+    const photoCell = c.photo
+      ? `<img src="${c.photo}" class="thumb" onclick="openPhotoModal('${c.photo}')" title="사진 보기" />`
+      : '-';
     return `<tr>
+      <td>${photoCell}</td>
       <td><strong>${esc(a?.name || '알수없음')}</strong></td>
       <td><span class="badge-type">${esc(a?.type || '-')}</span></td>
       <td>${esc(c.person)}</td>
@@ -853,6 +964,7 @@ window.openStickerModal = function(id) {
       <tr><td style="color:#888">반납예정</td><td>${formatDate(c.returnDate)}</td></tr>
       ${c.memo ? `<tr><td style="color:#888">메모</td><td style="font-style:italic">${esc(c.memo)}</td></tr>` : ''}
     </table>
+    ${c.photo ? `<img src="${c.photo}" style="margin-top:12px;max-width:100%;max-height:120px;border-radius:8px;object-fit:cover" />` : ''}
   `;
   document.getElementById('stickerModal').classList.add('open');
 };
@@ -895,7 +1007,11 @@ window.renderHistory = function() {
     if (c.returnedAt) { status = '반납완료'; badgeClass = 'badge-in'; }
     else if (c.returnDate && c.returnDate < today()) { status = '반납지연'; badgeClass = 'badge-overdue'; }
     else { status = '반출중'; badgeClass = 'badge-out'; }
+    const photoCell = c.photo
+      ? `<img src="${c.photo}" class="thumb" onclick="openPhotoModal('${c.photo}')" title="사진 보기" />`
+      : '-';
     return `<tr>
+      <td>${photoCell}</td>
       <td><strong>${esc(a?.name||'알수없음')}</strong></td>
       <td><span class="badge-type">${esc(a?.type||'-')}</span></td>
       <td>${esc(c.person)}</td>
