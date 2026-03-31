@@ -24,6 +24,15 @@
       padding: 2px 10px;
       font-size: 0.8rem;
     }
+    .sync-badge {
+      margin-left: auto;
+      font-size: 0.8rem;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: #fff2;
+    }
+    .sync-badge.online { background: rgba(56,161,105,0.4); }
+    .sync-badge.loading { background: rgba(255,200,0,0.3); }
 
     nav {
       background: white;
@@ -54,7 +63,6 @@
     .page { display: none; }
     .page.active { display: block; }
 
-    /* 카드 */
     .card {
       background: white;
       border-radius: 12px;
@@ -64,7 +72,6 @@
     }
     .card h2 { font-size: 1.05rem; margin-bottom: 16px; color: #1a56db; }
 
-    /* 통계 */
     .stats {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -85,7 +92,6 @@
     .stat-card.green .num { color: #38a169; }
     .stat-card.orange .num { color: #dd6b20; }
 
-    /* 폼 */
     .form-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -119,19 +125,19 @@
       font-weight: 600;
       transition: all 0.15s;
     }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-primary { background: #1a56db; color: white; }
-    .btn-primary:hover { background: #1447b2; }
+    .btn-primary:hover:not(:disabled) { background: #1447b2; }
     .btn-success { background: #38a169; color: white; }
-    .btn-success:hover { background: #2f855a; }
+    .btn-success:hover:not(:disabled) { background: #2f855a; }
     .btn-danger { background: #e53e3e; color: white; }
-    .btn-danger:hover { background: #c53030; }
+    .btn-danger:hover:not(:disabled) { background: #c53030; }
     .btn-secondary { background: #e2e8f0; color: #333; }
-    .btn-secondary:hover { background: #cbd5e0; }
+    .btn-secondary:hover:not(:disabled) { background: #cbd5e0; }
     .btn-sm { padding: 5px 12px; font-size: 0.8rem; }
 
     .btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
 
-    /* 검색/필터 */
     .filter-row {
       display: flex;
       gap: 10px;
@@ -150,7 +156,6 @@
     .filter-row input:focus, .filter-row select:focus { border-color: #1a56db; }
     .filter-row input { min-width: 200px; flex: 1; }
 
-    /* 테이블 */
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
     th {
@@ -170,7 +175,6 @@
     tr:hover td { background: #f8fafc; }
     tr:last-child td { border-bottom: none; }
 
-    /* 배지 */
     .badge-status {
       display: inline-block;
       padding: 3px 10px;
@@ -178,9 +182,9 @@
       font-size: 0.78rem;
       font-weight: 600;
     }
-    .badge-in { background: #c6f6d5; color: #276749; }       /* 재실 */
-    .badge-out { background: #fed7d7; color: #9b2c2c; }      /* 반출중 */
-    .badge-overdue { background: #feebc8; color: #7b341e; }  /* 반납지연 */
+    .badge-in { background: #c6f6d5; color: #276749; }
+    .badge-out { background: #fed7d7; color: #9b2c2c; }
+    .badge-overdue { background: #feebc8; color: #7b341e; }
 
     .badge-type {
       display: inline-block;
@@ -191,7 +195,6 @@
       color: #1a56db;
     }
 
-    /* 메모 표시 */
     .memo-text {
       max-width: 200px;
       overflow: hidden;
@@ -202,7 +205,6 @@
       font-size: 0.82rem;
     }
 
-    /* 알림 */
     #toast {
       position: fixed;
       bottom: 30px;
@@ -219,7 +221,6 @@
     }
     @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-    /* 모달 */
     .modal-bg {
       display: none;
       position: fixed; inset: 0;
@@ -247,8 +248,26 @@
       font-size: 0.95rem;
     }
 
-    /* 반출 이력 상세 */
-    .history-detail { font-size: 0.85rem; color: #666; }
+    .loading-overlay {
+      position: fixed; inset: 0;
+      background: rgba(255,255,255,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9998;
+      font-size: 1rem;
+      color: #1a56db;
+      gap: 12px;
+      flex-direction: column;
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 4px solid #e2e8f0;
+      border-top-color: #1a56db;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     @media (max-width: 600px) {
       main { padding: 12px; }
@@ -262,44 +281,34 @@
   <span style="font-size:1.5rem">📦</span>
   <h1>자산 반출 관리 시스템</h1>
   <span class="badge" id="headerDate"></span>
+  <span class="sync-badge loading" id="syncBadge">연결 중...</span>
 </header>
 
 <nav>
-  <button class="active" onclick="showPage('dashboard')">대시보드</button>
-  <button onclick="showPage('assets')">자산 목록</button>
-  <button onclick="showPage('checkouts')">반출 현황</button>
-  <button onclick="showPage('history')">반출 이력</button>
+  <button class="active" data-page="dashboard" onclick="showPage('dashboard', this)">대시보드</button>
+  <button data-page="assets" onclick="showPage('assets', this)">자산 목록</button>
+  <button data-page="checkouts" onclick="showPage('checkouts', this)">반출 현황</button>
+  <button data-page="history" onclick="showPage('history', this)">반출 이력</button>
 </nav>
 
 <main>
-
   <!-- 대시보드 -->
   <div class="page active" id="page-dashboard">
     <div class="stats" id="statsArea"></div>
-
     <div class="card">
       <h2>⚠️ 반납 지연 자산</h2>
       <div class="table-wrap">
-        <table id="overdueTable">
-          <thead>
-            <tr>
-              <th>자산명</th><th>종류</th><th>반출자</th><th>반출일</th><th>반납예정일</th><th>지연일수</th><th>메모</th>
-            </tr>
-          </thead>
+        <table>
+          <thead><tr><th>자산명</th><th>종류</th><th>반출자</th><th>반출일</th><th>반납예정일</th><th>지연일수</th><th>메모</th></tr></thead>
           <tbody id="overdueBody"></tbody>
         </table>
       </div>
     </div>
-
     <div class="card">
       <h2>📋 현재 반출중인 자산</h2>
       <div class="table-wrap">
         <table>
-          <thead>
-            <tr>
-              <th>자산명</th><th>종류</th><th>일련번호</th><th>반출자</th><th>반출일</th><th>반납예정일</th><th>메모</th>
-            </tr>
-          </thead>
+          <thead><tr><th>자산명</th><th>종류</th><th>일련번호</th><th>반출자</th><th>반출일</th><th>반납예정일</th><th>메모</th></tr></thead>
           <tbody id="dashCheckoutBody"></tbody>
         </table>
       </div>
@@ -319,16 +328,9 @@
           <label>종류 *</label>
           <select id="a-type">
             <option value="">선택</option>
-            <option>노트북</option>
-            <option>태블릿</option>
-            <option>모니터</option>
-            <option>충전기</option>
-            <option>키보드</option>
-            <option>마우스</option>
-            <option>카메라</option>
-            <option>프로젝터</option>
-            <option>스피커</option>
-            <option>기타</option>
+            <option>노트북</option><option>태블릿</option><option>모니터</option>
+            <option>충전기</option><option>키보드</option><option>마우스</option>
+            <option>카메라</option><option>프로젝터</option><option>스피커</option><option>기타</option>
           </select>
         </div>
         <div class="form-group">
@@ -345,10 +347,9 @@
         </div>
       </div>
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="addAsset()">자산 등록</button>
+        <button class="btn btn-primary" id="btnAddAsset" onclick="addAsset()">자산 등록</button>
       </div>
     </div>
-
     <div class="card">
       <h2>📦 등록된 자산</h2>
       <div class="filter-row">
@@ -368,11 +369,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead>
-            <tr>
-              <th>자산명</th><th>종류</th><th>일련번호</th><th>담당부서</th><th>상태</th><th>비고</th><th>작업</th>
-            </tr>
-          </thead>
+          <thead><tr><th>자산명</th><th>종류</th><th>일련번호</th><th>담당부서</th><th>상태</th><th>비고</th><th>작업</th></tr></thead>
           <tbody id="assetBody"></tbody>
         </table>
       </div>
@@ -410,10 +407,9 @@
         </div>
       </div>
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="addCheckout()">반출 등록</button>
+        <button class="btn btn-primary" id="btnAddCheckout" onclick="addCheckout()">반출 등록</button>
       </div>
     </div>
-
     <div class="card">
       <h2>📤 반출중인 자산</h2>
       <div class="filter-row">
@@ -422,11 +418,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead>
-            <tr>
-              <th>자산명</th><th>종류</th><th>반출자</th><th>목적</th><th>반출일</th><th>반납예정일</th><th>상태</th><th>메모</th><th>작업</th>
-            </tr>
-          </thead>
+          <thead><tr><th>자산명</th><th>종류</th><th>반출자</th><th>목적</th><th>반출일</th><th>반납예정일</th><th>상태</th><th>메모</th><th>작업</th></tr></thead>
           <tbody id="checkoutBody"></tbody>
         </table>
       </div>
@@ -446,17 +438,12 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead>
-            <tr>
-              <th>자산명</th><th>종류</th><th>반출자</th><th>목적</th><th>반출일</th><th>반납예정일</th><th>실제반납일</th><th>상태</th><th>메모</th>
-            </tr>
-          </thead>
+          <thead><tr><th>자산명</th><th>종류</th><th>반출자</th><th>목적</th><th>반출일</th><th>반납예정일</th><th>실제반납일</th><th>상태</th><th>메모</th></tr></thead>
           <tbody id="historyBody"></tbody>
         </table>
       </div>
     </div>
   </div>
-
 </main>
 
 <!-- 반납 모달 -->
@@ -478,7 +465,7 @@
       </div>
     </div>
     <div class="btn-row">
-      <button class="btn btn-success" onclick="confirmReturn()">반납 확정</button>
+      <button class="btn btn-success" id="btnConfirmReturn" onclick="confirmReturn()">반납 확정</button>
       <button class="btn btn-secondary" onclick="closeModal('returnModal')">취소</button>
     </div>
   </div>
@@ -491,13 +478,13 @@
     <p style="color:#555;margin-bottom:12px">이 자산과 관련된 모든 반출 이력이 삭제됩니다. 계속하시겠습니까?</p>
     <p id="del-assetName" style="font-weight:700;color:#e53e3e;margin-bottom:4px"></p>
     <div class="btn-row">
-      <button class="btn btn-danger" onclick="confirmDeleteAsset()">삭제</button>
+      <button class="btn btn-danger" id="btnConfirmDelete" onclick="confirmDeleteAsset()">삭제</button>
       <button class="btn btn-secondary" onclick="closeModal('deleteAssetModal')">취소</button>
     </div>
   </div>
 </div>
 
-<!-- 스티커 출력 모달 -->
+<!-- 스티커 모달 -->
 <div class="modal-bg" id="stickerModal">
   <div class="modal">
     <h3>🏷️ 반출 스티커</h3>
@@ -519,44 +506,68 @@
 
 <div id="toast"></div>
 
-<script>
+<!-- 로딩 오버레이 -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div>Firebase 연결 중...</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  query,
+  orderBy,
+  writeBatch
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
 // ───────────────────────────────────────────
-// 데이터 관리 (localStorage)
+// Firebase 초기화
 // ───────────────────────────────────────────
-const DB = {
-  get: (key) => JSON.parse(localStorage.getItem(key) || '[]'),
-  set: (key, val) => localStorage.setItem(key, JSON.stringify(val)),
+const firebaseConfig = {
+  apiKey: "AIzaSyC41bPlwj62UpaYfEEyL5C8u3hZd1u0lug",
+  authDomain: "asset-manager-1fce7.firebaseapp.com",
+  projectId: "asset-manager-1fce7",
+  storageBucket: "asset-manager-1fce7.firebasestorage.app",
+  messagingSenderId: "770552725182",
+  appId: "1:770552725182:web:d16a644294034b3e2da8ef",
+  measurementId: "G-RCCVN7TKNW"
 };
 
-let assets = DB.get('assets');
-let checkouts = DB.get('checkouts');
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-function save() {
-  DB.set('assets', assets);
-  DB.set('checkouts', checkouts);
-}
+// ───────────────────────────────────────────
+// 전역 상태
+// ───────────────────────────────────────────
+let assets = [];
+let checkouts = [];
+let assetsReady = false;
+let checkoutsReady = false;
+let currentPage = 'dashboard';
 
 // ───────────────────────────────────────────
 // 유틸
 // ───────────────────────────────────────────
-function uuid() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
-}
-
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
-
 function formatDate(d) {
-  if (!d) return '-';
-  return d.replace(/-/g, '.');
+  return d ? d.replace(/-/g, '.') : '-';
 }
-
 function daysDiff(from, to) {
-  const a = new Date(from), b = new Date(to);
-  return Math.floor((b - a) / 86400000);
+  return Math.floor((new Date(to) - new Date(from)) / 86400000);
 }
-
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 function toast(msg, color = '#1a56db') {
   const el = document.getElementById('toast');
   el.textContent = msg;
@@ -564,46 +575,12 @@ function toast(msg, color = '#1a56db') {
   el.style.display = 'block';
   setTimeout(() => el.style.display = 'none', 2500);
 }
-
 function closeModal(id) {
   document.getElementById(id).classList.remove('open');
 }
-
-// 페이지 전환
-function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  event.target.classList.add('active');
-  if (id === 'dashboard') renderDashboard();
-  if (id === 'assets') renderAssets();
-  if (id === 'checkouts') { renderCheckoutAssetSelect(); renderCheckouts(); }
-  if (id === 'history') renderHistory();
-}
-
-// ───────────────────────────────────────────
-// 자산 관리
-// ───────────────────────────────────────────
-function addAsset() {
-  const name = document.getElementById('a-name').value.trim();
-  const type = document.getElementById('a-type').value;
-  if (!name || !type) { toast('자산명과 종류는 필수입니다.', '#e53e3e'); return; }
-
-  assets.push({
-    id: uuid(),
-    name,
-    type,
-    serial: document.getElementById('a-serial').value.trim(),
-    dept: document.getElementById('a-dept').value.trim(),
-    note: document.getElementById('a-note').value.trim(),
-    createdAt: today(),
-  });
-  save();
-
-  ['a-name','a-serial','a-dept','a-note'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('a-type').value = '';
-  toast('✅ 자산이 등록되었습니다.');
-  renderAssets();
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (btn) btn.disabled = loading;
 }
 
 function getAssetStatus(assetId) {
@@ -613,13 +590,91 @@ function getAssetStatus(assetId) {
   return '반출중';
 }
 
-function renderAssets() {
+// ───────────────────────────────────────────
+// 실시간 리스너
+// ───────────────────────────────────────────
+onSnapshot(query(collection(db, 'assets'), orderBy('createdAt')), snap => {
+  assets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  assetsReady = true;
+  checkReady();
+  renderCurrentPage();
+}, err => {
+  console.error(err);
+  toast('자산 데이터 연결 오류: ' + err.message, '#e53e3e');
+});
+
+onSnapshot(query(collection(db, 'checkouts'), orderBy('createdAt')), snap => {
+  checkouts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  checkoutsReady = true;
+  checkReady();
+  renderCurrentPage();
+}, err => {
+  console.error(err);
+  toast('반출 데이터 연결 오류: ' + err.message, '#e53e3e');
+});
+
+function checkReady() {
+  if (assetsReady && checkoutsReady) {
+    document.getElementById('loadingOverlay').style.display = 'none';
+    document.getElementById('syncBadge').textContent = '실시간 동기화 중';
+    document.getElementById('syncBadge').className = 'sync-badge online';
+  }
+}
+
+function renderCurrentPage() {
+  if (currentPage === 'dashboard') renderDashboard();
+  else if (currentPage === 'assets') renderAssets();
+  else if (currentPage === 'checkouts') { renderCheckoutAssetSelect(); renderCheckouts(); }
+  else if (currentPage === 'history') renderHistory();
+}
+
+// ───────────────────────────────────────────
+// 페이지 전환
+// ───────────────────────────────────────────
+window.showPage = function(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  currentPage = id;
+  renderCurrentPage();
+};
+
+// ───────────────────────────────────────────
+// 자산 관리
+// ───────────────────────────────────────────
+window.addAsset = async function() {
+  const name = document.getElementById('a-name').value.trim();
+  const type = document.getElementById('a-type').value;
+  if (!name || !type) { toast('자산명과 종류는 필수입니다.', '#e53e3e'); return; }
+
+  setLoading('btnAddAsset', true);
+  try {
+    await addDoc(collection(db, 'assets'), {
+      name,
+      type,
+      serial: document.getElementById('a-serial').value.trim(),
+      dept: document.getElementById('a-dept').value.trim(),
+      note: document.getElementById('a-note').value.trim(),
+      createdAt: today(),
+    });
+    ['a-name','a-serial','a-dept','a-note'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('a-type').value = '';
+    toast('✅ 자산이 등록되었습니다.');
+  } catch(e) {
+    toast('오류: ' + e.message, '#e53e3e');
+  } finally {
+    setLoading('btnAddAsset', false);
+  }
+};
+
+window.renderAssets = function() {
   const search = (document.getElementById('assetSearch')?.value || '').toLowerCase();
   const typeF = document.getElementById('assetTypeFilter')?.value || '';
   const statusF = document.getElementById('assetStatusFilter')?.value || '';
 
   let list = assets.filter(a => {
-    const matchSearch = !search || a.name.toLowerCase().includes(search) || a.serial.toLowerCase().includes(search);
+    const matchSearch = !search || a.name.toLowerCase().includes(search) || (a.serial||'').toLowerCase().includes(search);
     const matchType = !typeF || a.type === typeF;
     const status = getAssetStatus(a.id);
     const matchStatus = !statusF || status === statusF;
@@ -627,11 +682,11 @@ function renderAssets() {
   });
 
   const tbody = document.getElementById('assetBody');
+  if (!tbody) return;
   if (!list.length) {
     tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">등록된 자산이 없습니다.</td></tr>';
     return;
   }
-
   tbody.innerHTML = list.map(a => {
     const status = getAssetStatus(a.id);
     const badgeClass = status === '재실' ? 'badge-in' : status === '반납지연' ? 'badge-overdue' : 'badge-out';
@@ -642,44 +697,51 @@ function renderAssets() {
       <td>${esc(a.dept) || '-'}</td>
       <td><span class="badge-status ${badgeClass}">${status}</span></td>
       <td class="memo-text" title="${esc(a.note)}">${esc(a.note) || '-'}</td>
-      <td>
-        <button class="btn btn-danger btn-sm" onclick="askDeleteAsset('${a.id}')">삭제</button>
-      </td>
+      <td><button class="btn btn-danger btn-sm" onclick="askDeleteAsset('${a.id}')">삭제</button></td>
     </tr>`;
   }).join('');
-}
+};
 
 let pendingDeleteAssetId = null;
-function askDeleteAsset(id) {
+window.askDeleteAsset = function(id) {
   pendingDeleteAssetId = id;
   const a = assets.find(x => x.id === id);
   document.getElementById('del-assetName').textContent = a ? `"${a.name}"` : '';
   document.getElementById('deleteAssetModal').classList.add('open');
-}
-function confirmDeleteAsset() {
-  assets = assets.filter(a => a.id !== pendingDeleteAssetId);
-  checkouts = checkouts.filter(c => c.assetId !== pendingDeleteAssetId);
-  save();
-  closeModal('deleteAssetModal');
-  toast('🗑️ 자산이 삭제되었습니다.', '#e53e3e');
-  renderAssets();
-  renderDashboard();
-}
+};
+
+window.confirmDeleteAsset = async function() {
+  setLoading('btnConfirmDelete', true);
+  try {
+    const batch = writeBatch(db);
+    batch.delete(doc(db, 'assets', pendingDeleteAssetId));
+    checkouts.filter(c => c.assetId === pendingDeleteAssetId)
+             .forEach(c => batch.delete(doc(db, 'checkouts', c.id)));
+    await batch.commit();
+    closeModal('deleteAssetModal');
+    toast('🗑️ 자산이 삭제되었습니다.', '#e53e3e');
+  } catch(e) {
+    toast('오류: ' + e.message, '#e53e3e');
+  } finally {
+    setLoading('btnConfirmDelete', false);
+  }
+};
 
 // ───────────────────────────────────────────
 // 반출 관리
 // ───────────────────────────────────────────
 function renderCheckoutAssetSelect() {
   const sel = document.getElementById('co-asset');
+  if (!sel) return;
   const available = assets.filter(a => getAssetStatus(a.id) === '재실');
   sel.innerHTML = available.length
     ? `<option value="">자산 선택</option>` + available.map(a =>
-        `<option value="${a.id}">[${esc(a.type)}] ${esc(a.name)} ${a.serial ? '(' + esc(a.serial) + ')' : ''}</option>`
+        `<option value="${a.id}">[${esc(a.type)}] ${esc(a.name)}${a.serial ? ' (' + esc(a.serial) + ')' : ''}</option>`
       ).join('')
     : `<option value="">반출 가능한 자산 없음</option>`;
 }
 
-function addCheckout() {
+window.addCheckout = async function() {
   const assetId = document.getElementById('co-asset').value;
   const person = document.getElementById('co-person').value.trim();
   const coDate = document.getElementById('co-date').value;
@@ -687,57 +749,55 @@ function addCheckout() {
     toast('자산, 반출자, 반출일은 필수입니다.', '#e53e3e'); return;
   }
 
-  checkouts.push({
-    id: uuid(),
-    assetId,
-    person,
-    purpose: document.getElementById('co-purpose').value.trim(),
-    checkoutDate: coDate,
-    returnDate: document.getElementById('co-return').value || '',
-    memo: document.getElementById('co-memo').value.trim(),
-    returnedAt: null,
-    returnMemo: '',
-    createdAt: today(),
-  });
-  save();
+  setLoading('btnAddCheckout', true);
+  try {
+    await addDoc(collection(db, 'checkouts'), {
+      assetId,
+      person,
+      purpose: document.getElementById('co-purpose').value.trim(),
+      checkoutDate: coDate,
+      returnDate: document.getElementById('co-return').value || '',
+      memo: document.getElementById('co-memo').value.trim(),
+      returnedAt: null,
+      returnMemo: '',
+      createdAt: today(),
+    });
+    ['co-person','co-purpose','co-memo'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('co-asset').value = '';
+    toast('✅ 반출이 등록되었습니다.');
+  } catch(e) {
+    toast('오류: ' + e.message, '#e53e3e');
+  } finally {
+    setLoading('btnAddCheckout', false);
+  }
+};
 
-  ['co-person','co-purpose','co-memo'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('co-asset').value = '';
-  toast('✅ 반출이 등록되었습니다.');
-  renderCheckoutAssetSelect();
-  renderCheckouts();
-  renderDashboard();
-}
-
-function renderCheckouts() {
+window.renderCheckouts = function() {
   const search = (document.getElementById('checkoutSearch')?.value || '').toLowerCase();
   const active = checkouts.filter(c => !c.returnedAt);
-
-  let list = active.filter(c => {
+  const list = active.filter(c => {
     const a = assets.find(x => x.id === c.assetId);
     const label = ((a?.name || '') + ' ' + (c.person || '')).toLowerCase();
     return !search || label.includes(search);
   });
 
   const tbody = document.getElementById('checkoutBody');
+  if (!tbody) return;
   if (!list.length) {
     tbody.innerHTML = '<tr><td colspan="9" class="empty-msg">현재 반출중인 자산이 없습니다.</td></tr>';
     return;
   }
-
   tbody.innerHTML = list.map(c => {
     const a = assets.find(x => x.id === c.assetId);
     const isOverdue = c.returnDate && c.returnDate < today();
-    const badgeClass = isOverdue ? 'badge-overdue' : 'badge-out';
-    const statusLabel = isOverdue ? '반납지연' : '반출중';
     return `<tr>
       <td><strong>${esc(a?.name || '알수없음')}</strong></td>
       <td><span class="badge-type">${esc(a?.type || '-')}</span></td>
       <td>${esc(c.person)}</td>
       <td>${esc(c.purpose) || '-'}</td>
       <td>${formatDate(c.checkoutDate)}</td>
-      <td>${formatDate(c.returnDate) || '-'}</td>
-      <td><span class="badge-status ${badgeClass}">${statusLabel}</span></td>
+      <td>${formatDate(c.returnDate)}</td>
+      <td><span class="badge-status ${isOverdue ? 'badge-overdue' : 'badge-out'}">${isOverdue ? '반납지연' : '반출중'}</span></td>
       <td class="memo-text" title="${esc(c.memo)}">${esc(c.memo) || '-'}</td>
       <td style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-success btn-sm" onclick="openReturnModal('${c.id}')">반납</button>
@@ -745,11 +805,11 @@ function renderCheckouts() {
       </td>
     </tr>`;
   }).join('');
-}
+};
 
 // 반납 모달
 let pendingReturnId = null;
-function openReturnModal(id) {
+window.openReturnModal = function(id) {
   pendingReturnId = id;
   const c = checkouts.find(x => x.id === id);
   const a = assets.find(x => x.id === c?.assetId);
@@ -757,83 +817,78 @@ function openReturnModal(id) {
   document.getElementById('ret-date').value = today();
   document.getElementById('ret-memo').value = '';
   document.getElementById('returnModal').classList.add('open');
-}
-function confirmReturn() {
+};
+
+window.confirmReturn = async function() {
   const retDate = document.getElementById('ret-date').value;
   if (!retDate) { toast('반납일을 입력하세요.', '#e53e3e'); return; }
-  const c = checkouts.find(x => x.id === pendingReturnId);
-  if (c) {
-    c.returnedAt = retDate;
-    c.returnMemo = document.getElementById('ret-memo').value.trim();
+  setLoading('btnConfirmReturn', true);
+  try {
+    await updateDoc(doc(db, 'checkouts', pendingReturnId), {
+      returnedAt: retDate,
+      returnMemo: document.getElementById('ret-memo').value.trim(),
+    });
+    closeModal('returnModal');
+    toast('✅ 반납 처리되었습니다.', '#38a169');
+  } catch(e) {
+    toast('오류: ' + e.message, '#e53e3e');
+  } finally {
+    setLoading('btnConfirmReturn', false);
   }
-  save();
-  closeModal('returnModal');
-  toast('✅ 반납 처리되었습니다.', '#38a169');
-  renderCheckouts();
-  renderDashboard();
-  renderHistory();
-}
+};
 
 // 스티커 모달
-function openStickerModal(id) {
+window.openStickerModal = function(id) {
   const c = checkouts.find(x => x.id === id);
   const a = assets.find(x => x.id === c?.assetId);
-  const content = document.getElementById('stickerContent');
-  content.innerHTML = `
+  document.getElementById('stickerContent').innerHTML = `
     <div style="font-size:1.1rem;font-weight:700;margin-bottom:8px">📦 자산 반출 스티커</div>
     <table style="width:100%;font-size:0.9rem">
-      <tr><td style="color:#888;width:90px">자산명</td><td><strong>${esc(a?.name || '-')}</strong></td></tr>
-      <tr><td style="color:#888">종류</td><td>${esc(a?.type || '-')}</td></tr>
-      <tr><td style="color:#888">일련번호</td><td>${esc(a?.serial || '-')}</td></tr>
+      <tr><td style="color:#888;width:90px">자산명</td><td><strong>${esc(a?.name||'-')}</strong></td></tr>
+      <tr><td style="color:#888">종류</td><td>${esc(a?.type||'-')}</td></tr>
+      <tr><td style="color:#888">일련번호</td><td>${esc(a?.serial||'-')}</td></tr>
       <tr><td style="color:#888">반출자</td><td><strong>${esc(c.person)}</strong></td></tr>
-      <tr><td style="color:#888">목적</td><td>${esc(c.purpose) || '-'}</td></tr>
+      <tr><td style="color:#888">목적</td><td>${esc(c.purpose)||'-'}</td></tr>
       <tr><td style="color:#888">반출일</td><td>${formatDate(c.checkoutDate)}</td></tr>
-      <tr><td style="color:#888">반납예정</td><td>${formatDate(c.returnDate) || '-'}</td></tr>
+      <tr><td style="color:#888">반납예정</td><td>${formatDate(c.returnDate)}</td></tr>
       ${c.memo ? `<tr><td style="color:#888">메모</td><td style="font-style:italic">${esc(c.memo)}</td></tr>` : ''}
     </table>
   `;
   document.getElementById('stickerModal').classList.add('open');
-}
-function printSticker() {
+};
+
+window.printSticker = function() {
   const content = document.getElementById('stickerContent').innerHTML;
   const w = window.open('', '_blank', 'width=400,height=500');
-  w.document.write(`
-    <html><head><title>자산 반출 스티커</title>
-    <style>
-      body { font-family: 'Malgun Gothic', sans-serif; padding: 20px; font-size: 14px; }
-      table { width: 100%; border-collapse: collapse; }
-      td { padding: 5px 8px; }
-      div { font-size: 16px; font-weight: bold; margin-bottom: 10px; }
-    </style></head>
-    <body>${content}</body></html>
-  `);
+  w.document.write(`<html><head><title>자산 반출 스티커</title>
+    <style>body{font-family:'Malgun Gothic',sans-serif;padding:20px;font-size:14px}table{width:100%;border-collapse:collapse}td{padding:5px 8px}div{font-size:16px;font-weight:bold;margin-bottom:10px}</style>
+    </head><body>${content}</body></html>`);
   w.document.close();
   w.print();
-}
+};
 
 // ───────────────────────────────────────────
 // 이력
 // ───────────────────────────────────────────
-function renderHistory() {
+window.renderHistory = function() {
   const search = (document.getElementById('histSearch')?.value || '').toLowerCase();
   const from = document.getElementById('histFrom')?.value || '';
   const to = document.getElementById('histTo')?.value || '';
 
   let list = [...checkouts].reverse().filter(c => {
     const a = assets.find(x => x.id === c.assetId);
-    const label = ((a?.name || '') + ' ' + (c.person || '')).toLowerCase();
-    const matchSearch = !search || label.includes(search);
-    const matchFrom = !from || c.checkoutDate >= from;
-    const matchTo = !to || c.checkoutDate <= to;
-    return matchSearch && matchFrom && matchTo;
+    const label = ((a?.name||'') + ' ' + (c.person||'')).toLowerCase();
+    return (!search || label.includes(search))
+      && (!from || c.checkoutDate >= from)
+      && (!to || c.checkoutDate <= to);
   });
 
   const tbody = document.getElementById('historyBody');
+  if (!tbody) return;
   if (!list.length) {
     tbody.innerHTML = '<tr><td colspan="9" class="empty-msg">반출 이력이 없습니다.</td></tr>';
     return;
   }
-
   tbody.innerHTML = list.map(c => {
     const a = assets.find(x => x.id === c.assetId);
     let status, badgeClass;
@@ -841,81 +896,78 @@ function renderHistory() {
     else if (c.returnDate && c.returnDate < today()) { status = '반납지연'; badgeClass = 'badge-overdue'; }
     else { status = '반출중'; badgeClass = 'badge-out'; }
     return `<tr>
-      <td><strong>${esc(a?.name || '알수없음')}</strong></td>
-      <td><span class="badge-type">${esc(a?.type || '-')}</span></td>
+      <td><strong>${esc(a?.name||'알수없음')}</strong></td>
+      <td><span class="badge-type">${esc(a?.type||'-')}</span></td>
       <td>${esc(c.person)}</td>
-      <td>${esc(c.purpose) || '-'}</td>
+      <td>${esc(c.purpose)||'-'}</td>
       <td>${formatDate(c.checkoutDate)}</td>
-      <td>${formatDate(c.returnDate) || '-'}</td>
-      <td>${formatDate(c.returnedAt) || '-'}</td>
+      <td>${formatDate(c.returnDate)}</td>
+      <td>${formatDate(c.returnedAt)}</td>
       <td><span class="badge-status ${badgeClass}">${status}</span></td>
-      <td class="memo-text" title="${esc(c.memo)}">${esc(c.memo) || '-'}</td>
+      <td class="memo-text" title="${esc(c.memo)}">${esc(c.memo)||'-'}</td>
     </tr>`;
   }).join('');
-}
+};
 
 // ───────────────────────────────────────────
 // 대시보드
 // ───────────────────────────────────────────
 function renderDashboard() {
-  const totalAssets = assets.length;
   const outList = checkouts.filter(c => !c.returnedAt);
-  const outCount = outList.length;
   const overdueList = outList.filter(c => c.returnDate && c.returnDate < today());
-  const inCount = totalAssets - outCount;
+  const inCount = assets.length - outList.length;
 
-  document.getElementById('statsArea').innerHTML = `
-    <div class="stat-card blue"><div class="num">${totalAssets}</div><div class="label">전체 자산</div></div>
+  const statsArea = document.getElementById('statsArea');
+  if (statsArea) statsArea.innerHTML = `
+    <div class="stat-card blue"><div class="num">${assets.length}</div><div class="label">전체 자산</div></div>
     <div class="stat-card green"><div class="num">${inCount}</div><div class="label">재실 중</div></div>
-    <div class="stat-card red"><div class="num">${outCount}</div><div class="label">반출 중</div></div>
+    <div class="stat-card red"><div class="num">${outList.length}</div><div class="label">반출 중</div></div>
     <div class="stat-card orange"><div class="num">${overdueList.length}</div><div class="label">반납 지연</div></div>
   `;
 
-  // 지연 테이블
   const overdueBody = document.getElementById('overdueBody');
-  if (!overdueList.length) {
-    overdueBody.innerHTML = '<tr><td colspan="7" class="empty-msg">반납 지연 자산이 없습니다. 👍</td></tr>';
-  } else {
-    overdueBody.innerHTML = overdueList.map(c => {
-      const a = assets.find(x => x.id === c.assetId);
-      const delay = daysDiff(c.returnDate, today());
-      return `<tr>
-        <td><strong>${esc(a?.name || '-')}</strong></td>
-        <td><span class="badge-type">${esc(a?.type || '-')}</span></td>
-        <td>${esc(c.person)}</td>
-        <td>${formatDate(c.checkoutDate)}</td>
-        <td>${formatDate(c.returnDate)}</td>
-        <td style="color:#e53e3e;font-weight:700">+${delay}일</td>
-        <td class="memo-text">${esc(c.memo) || '-'}</td>
-      </tr>`;
-    }).join('');
+  if (overdueBody) {
+    overdueBody.innerHTML = overdueList.length
+      ? overdueList.map(c => {
+          const a = assets.find(x => x.id === c.assetId);
+          const delay = daysDiff(c.returnDate, today());
+          return `<tr>
+            <td><strong>${esc(a?.name||'-')}</strong></td>
+            <td><span class="badge-type">${esc(a?.type||'-')}</span></td>
+            <td>${esc(c.person)}</td>
+            <td>${formatDate(c.checkoutDate)}</td>
+            <td>${formatDate(c.returnDate)}</td>
+            <td style="color:#e53e3e;font-weight:700">+${delay}일</td>
+            <td class="memo-text">${esc(c.memo)||'-'}</td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="7" class="empty-msg">반납 지연 자산이 없습니다. 👍</td></tr>';
   }
 
-  // 반출중 테이블
   const dashBody = document.getElementById('dashCheckoutBody');
-  const nonOverdue = outList.filter(c => !(c.returnDate && c.returnDate < today()));
-  if (!nonOverdue.length) {
-    dashBody.innerHTML = '<tr><td colspan="7" class="empty-msg">반출중인 자산이 없습니다.</td></tr>';
-  } else {
-    dashBody.innerHTML = nonOverdue.map(c => {
-      const a = assets.find(x => x.id === c.assetId);
-      return `<tr>
-        <td><strong>${esc(a?.name || '-')}</strong></td>
-        <td><span class="badge-type">${esc(a?.type || '-')}</span></td>
-        <td>${esc(a?.serial) || '-'}</td>
-        <td>${esc(c.person)}</td>
-        <td>${formatDate(c.checkoutDate)}</td>
-        <td>${formatDate(c.returnDate) || '-'}</td>
-        <td class="memo-text">${esc(c.memo) || '-'}</td>
-      </tr>`;
-    }).join('');
+  if (dashBody) {
+    const nonOverdue = outList.filter(c => !(c.returnDate && c.returnDate < today()));
+    dashBody.innerHTML = nonOverdue.length
+      ? nonOverdue.map(c => {
+          const a = assets.find(x => x.id === c.assetId);
+          return `<tr>
+            <td><strong>${esc(a?.name||'-')}</strong></td>
+            <td><span class="badge-type">${esc(a?.type||'-')}</span></td>
+            <td>${esc(a?.serial)||'-'}</td>
+            <td>${esc(c.person)}</td>
+            <td>${formatDate(c.checkoutDate)}</td>
+            <td>${formatDate(c.returnDate)}</td>
+            <td class="memo-text">${esc(c.memo)||'-'}</td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="7" class="empty-msg">반출중인 자산이 없습니다.</td></tr>';
   }
 }
 
 // ───────────────────────────────────────────
 // CSV 내보내기
 // ───────────────────────────────────────────
-function exportCSV(type) {
+window.exportCSV = function(type) {
   let rows = [], filename = '';
   if (type === 'assets') {
     filename = '자산목록.csv';
@@ -926,19 +978,18 @@ function exportCSV(type) {
     rows = [['자산명','종류','반출자','목적','반출일','반납예정일','상태','메모']];
     checkouts.filter(c => !c.returnedAt).forEach(c => {
       const a = assets.find(x => x.id === c.assetId);
-      const isOverdue = c.returnDate && c.returnDate < today();
-      rows.push([a?.name||'', a?.type||'', c.person, c.purpose, c.checkoutDate, c.returnDate, isOverdue?'반납지연':'반출중', c.memo]);
+      rows.push([a?.name||'', a?.type||'', c.person, c.purpose, c.checkoutDate, c.returnDate,
+        (c.returnDate && c.returnDate < today()) ? '반납지연' : '반출중', c.memo]);
     });
   } else {
     filename = '반출이력.csv';
     rows = [['자산명','종류','반출자','목적','반출일','반납예정일','실제반납일','상태','메모']];
     [...checkouts].reverse().forEach(c => {
       const a = assets.find(x => x.id === c.assetId);
-      let status = c.returnedAt ? '반납완료' : (c.returnDate && c.returnDate < today() ? '반납지연' : '반출중');
+      const status = c.returnedAt ? '반납완료' : (c.returnDate && c.returnDate < today() ? '반납지연' : '반출중');
       rows.push([a?.name||'', a?.type||'', c.person, c.purpose, c.checkoutDate, c.returnDate, c.returnedAt||'', status, c.memo]);
     });
   }
-
   const bom = '\uFEFF';
   const csv = bom + rows.map(r => r.map(cell => `"${(cell||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -947,26 +998,21 @@ function exportCSV(type) {
   a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
   toast(`📥 ${filename} 다운로드`);
-}
-
-// XSS 방지
-function esc(str) {
-  if (!str) return '';
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+};
 
 // ───────────────────────────────────────────
 // 초기화
 // ───────────────────────────────────────────
-document.getElementById('headerDate').textContent = new Date().toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
+document.getElementById('headerDate').textContent = new Date().toLocaleDateString('ko-KR', {
+  year:'numeric', month:'long', day:'numeric', weekday:'short'
+});
 document.getElementById('co-date').value = today();
-document.getElementById('ret-date').value = today();
-renderDashboard();
 
-// 모달 외부 클릭 시 닫기
 document.querySelectorAll('.modal-bg').forEach(bg => {
   bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });
 });
+
+window.closeModal = closeModal;
 </script>
 </body>
 </html>
