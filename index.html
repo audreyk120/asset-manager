@@ -357,6 +357,14 @@
           <label>담당부서</label>
           <input id="a-dept" placeholder="예) IT팀" />
         </div>
+        <div class="form-group">
+          <label>색상</label>
+          <input id="a-color" placeholder="예) 스페이스 그레이, 실버" />
+        </div>
+        <div class="form-group full">
+          <label>기기 특징</label>
+          <input id="a-feature" placeholder="예) 스티커 부착, 케이스 있음, 흠집 있음" />
+        </div>
         <div class="form-group full">
           <label>비고</label>
           <textarea id="a-note" placeholder="특이사항이나 설명을 입력하세요"></textarea>
@@ -385,7 +393,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>자산명</th><th>종류</th><th>일련번호</th><th>담당부서</th><th>상태</th><th>비고</th><th>작업</th></tr></thead>
+          <thead><tr><th>자산명</th><th>종류</th><th>일련번호</th><th>색상</th><th>기기 특징</th><th>담당부서</th><th>상태</th><th>비고</th><th>작업</th></tr></thead>
           <tbody id="assetBody"></tbody>
         </table>
       </div>
@@ -549,6 +557,14 @@
       <div class="form-group">
         <label>담당부서</label>
         <input id="ea-dept" placeholder="예) IT팀" />
+      </div>
+      <div class="form-group">
+        <label>색상</label>
+        <input id="ea-color" placeholder="예) 스페이스 그레이, 실버" />
+      </div>
+      <div class="form-group full">
+        <label>기기 특징</label>
+        <input id="ea-feature" placeholder="예) 스티커 부착, 케이스 있음, 흠집 있음" />
       </div>
       <div class="form-group full">
         <label>비고</label>
@@ -760,10 +776,12 @@ window.addAsset = async function() {
       type,
       serial: document.getElementById('a-serial').value.trim(),
       dept: document.getElementById('a-dept').value.trim(),
+      color: document.getElementById('a-color').value.trim(),
+      feature: document.getElementById('a-feature').value.trim(),
       note: document.getElementById('a-note').value.trim(),
       createdAt: today(),
     });
-    ['a-name','a-serial','a-dept','a-note'].forEach(id => document.getElementById(id).value = '');
+    ['a-name','a-serial','a-dept','a-color','a-feature','a-note'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('a-type').value = '';
     toast('✅ 자산이 등록되었습니다.');
   } catch(e) {
@@ -789,7 +807,7 @@ window.renderAssets = function() {
   const tbody = document.getElementById('assetBody');
   if (!tbody) return;
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">등록된 자산이 없습니다.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-msg">등록된 자산이 없습니다.</td></tr>';
     return;
   }
   tbody.innerHTML = list.map(a => {
@@ -799,6 +817,8 @@ window.renderAssets = function() {
       <td><strong>${esc(a.name)}</strong></td>
       <td><span class="badge-type">${esc(a.type)}</span></td>
       <td style="color:#666;font-size:0.85rem">${esc(a.serial) || '-'}</td>
+      <td>${esc(a.color) || '-'}</td>
+      <td class="memo-text" title="${esc(a.feature)}">${esc(a.feature) || '-'}</td>
       <td>${esc(a.dept) || '-'}</td>
       <td><span class="badge-status ${badgeClass}">${status}</span></td>
       <td class="memo-text" title="${esc(a.note)}">${esc(a.note) || '-'}</td>
@@ -818,6 +838,8 @@ window.openEditAssetModal = function(id) {
   document.getElementById('ea-type').value = a.type || '';
   document.getElementById('ea-serial').value = a.serial || '';
   document.getElementById('ea-dept').value = a.dept || '';
+  document.getElementById('ea-color').value = a.color || '';
+  document.getElementById('ea-feature').value = a.feature || '';
   document.getElementById('ea-note').value = a.note || '';
   document.getElementById('editAssetModal').classList.add('open');
 };
@@ -833,6 +855,8 @@ window.confirmEditAsset = async function() {
       type,
       serial: document.getElementById('ea-serial').value.trim(),
       dept: document.getElementById('ea-dept').value.trim(),
+      color: document.getElementById('ea-color').value.trim(),
+      feature: document.getElementById('ea-feature').value.trim(),
       note: document.getElementById('ea-note').value.trim(),
     });
     closeModal('editAssetModal');
@@ -1032,6 +1056,8 @@ window.openStickerModal = function(id) {
       <tr><td style="color:#888;width:90px">자산명</td><td><strong>${esc(a?.name||'-')}</strong></td></tr>
       <tr><td style="color:#888">종류</td><td>${esc(a?.type||'-')}</td></tr>
       <tr><td style="color:#888">일련번호</td><td>${esc(a?.serial||'-')}</td></tr>
+      ${a?.color ? `<tr><td style="color:#888">색상</td><td>${esc(a.color)}</td></tr>` : ''}
+      ${a?.feature ? `<tr><td style="color:#888">특징</td><td>${esc(a.feature)}</td></tr>` : ''}
       <tr><td style="color:#888">반출자</td><td><strong>${esc(c.person)}</strong></td></tr>
       <tr><td style="color:#888">목적</td><td>${esc(c.purpose)||'-'}</td></tr>
       <tr><td style="color:#888">반출일</td><td>${formatDate(c.checkoutDate)}</td></tr>
