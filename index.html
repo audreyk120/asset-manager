@@ -532,6 +532,17 @@
   </div>
 </div>
 
+<!-- 자산 상세 모달 -->
+<div class="modal-bg" id="assetDetailModal">
+  <div class="modal" style="max-width:520px">
+    <h3>📋 자산 상세 정보</h3>
+    <div id="assetDetailContent" style="font-size:0.9rem;line-height:1.9"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal('assetDetailModal')">닫기</button>
+    </div>
+  </div>
+</div>
+
 <!-- 자산 수정 모달 -->
 <div class="modal-bg" id="editAssetModal">
   <div class="modal">
@@ -821,7 +832,16 @@ window.renderAssets = function() {
       <td class="memo-text" title="${esc(a.feature)}">${esc(a.feature) || '-'}</td>
       <td>${esc(a.dept) || '-'}</td>
       <td><span class="badge-status ${badgeClass}">${status}</span></td>
-      <td class="memo-text" title="${esc(a.note)}">${esc(a.note) || '-'}</td>
+      <td class="memo-text">${(() => {
+        if (status !== '재실') {
+          const c = checkouts.find(x => x.assetId === a.id && !x.returnedAt);
+          const parts = [];
+          if (c?.person) parts.push(c.person);
+          if (c?.purpose) parts.push(c.purpose);
+          return parts.length ? `<span style="color:#dd6b20">🚀 ${esc(parts.join(' · '))}</span>` : (esc(a.note) || '-');
+        }
+        return esc(a.note) || '-';
+      })()}</td>
       <td style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-primary btn-sm" onclick="openEditAssetModal('${a.id}')">수정</button>
         <button class="btn btn-danger btn-sm" onclick="askDeleteAsset('${a.id}')">삭제</button>
@@ -958,7 +978,7 @@ window.renderCheckouts = function() {
     const a = assets.find(x => x.id === c.assetId);
     const isOverdue = c.returnDate && c.returnDate < today();
     return `<tr>
-      <td><strong>${esc(a?.name || '알수없음')}</strong></td>
+      <td><strong style="cursor:pointer;color:#1a56db;text-decoration:underline" onclick="openAssetDetail('${c.assetId}','${c.id}')">${esc(a?.name || '알수없음')}</strong></td>
       <td><span class="badge-type">${esc(a?.type || '-')}</span></td>
       <td>${esc(c.person)}</td>
       <td>${esc(c.purpose) || '-'}</td>
@@ -974,6 +994,44 @@ window.renderCheckouts = function() {
       </td>
     </tr>`;
   }).join('');
+};
+
+// 자산 상세 모달
+window.openAssetDetail = function(assetId, checkoutId) {
+  const a = assets.find(x => x.id === assetId);
+  const c = checkouts.find(x => x.id === checkoutId);
+  if (!a) return;
+
+  const row = (label, value) => value
+    ? `<div style="display:flex;gap:0;border-bottom:1px solid #f0f0f0;padding:7px 0">
+        <span style="color:#888;width:110px;flex-shrink:0">${label}</span>
+        <span style="font-weight:500">${value}</span>
+       </div>`
+    : '';
+
+  document.getElementById('assetDetailContent').innerHTML = `
+    <div style="background:#f8faff;border-radius:8px;padding:14px;margin-bottom:14px">
+      <div style="font-size:1rem;font-weight:700;margin-bottom:10px;color:#1a56db">기기 정보</div>
+      ${row('자산명', esc(a.name))}
+      ${row('종류', esc(a.type))}
+      ${row('일련번호', esc(a.serial))}
+      ${row('색상', esc(a.color))}
+      ${row('기기 특징', esc(a.feature))}
+      ${row('담당부서', esc(a.dept))}
+      ${row('비고', esc(a.note))}
+    </div>
+    ${c ? `
+    <div style="background:#fff8f0;border-radius:8px;padding:14px">
+      <div style="font-size:1rem;font-weight:700;margin-bottom:10px;color:#dd6b20">반출 정보</div>
+      ${row('반출자', esc(c.person))}
+      ${row('반출 목적', esc(c.purpose))}
+      ${row('반출일', formatDate(c.checkoutDate))}
+      ${row('반납 예정일', formatDate(c.returnDate))}
+      ${row('메모', esc(c.memo))}
+      ${c.notionUrl ? `<div style="display:flex;gap:0;padding:7px 0"><span style="color:#888;width:110px;flex-shrink:0">노션 링크</span><a href="${esc(c.notionUrl)}" target="_blank" class="notion-link">📄 노션</a></div>` : ''}
+    </div>` : ''}
+  `;
+  document.getElementById('assetDetailModal').classList.add('open');
 };
 
 // 반출 수정 모달
