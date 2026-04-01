@@ -524,6 +524,44 @@
   </div>
 </div>
 
+<!-- 자산 수정 모달 -->
+<div class="modal-bg" id="editAssetModal">
+  <div class="modal">
+    <h3>✏️ 자산 정보 수정</h3>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>자산명 *</label>
+        <input id="ea-name" placeholder="예) MacBook Pro 14인치" />
+      </div>
+      <div class="form-group">
+        <label>종류 *</label>
+        <select id="ea-type">
+          <option value="">선택</option>
+          <option>노트북</option><option>태블릿</option><option>모니터</option>
+          <option>충전기</option><option>키보드</option><option>마우스</option>
+          <option>카메라</option><option>프로젝터</option><option>스피커</option><option>기타</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>일련번호 / 자산번호</label>
+        <input id="ea-serial" placeholder="예) SN-20240001" />
+      </div>
+      <div class="form-group">
+        <label>담당부서</label>
+        <input id="ea-dept" placeholder="예) IT팀" />
+      </div>
+      <div class="form-group full">
+        <label>비고</label>
+        <textarea id="ea-note" placeholder="특이사항이나 설명"></textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnConfirmEditAsset" onclick="confirmEditAsset()">저장</button>
+      <button class="btn btn-secondary" onclick="closeModal('editAssetModal')">취소</button>
+    </div>
+  </div>
+</div>
+
 <!-- 반출 수정 모달 -->
 <div class="modal-bg" id="editCheckoutModal">
   <div class="modal">
@@ -764,9 +802,46 @@ window.renderAssets = function() {
       <td>${esc(a.dept) || '-'}</td>
       <td><span class="badge-status ${badgeClass}">${status}</span></td>
       <td class="memo-text" title="${esc(a.note)}">${esc(a.note) || '-'}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="askDeleteAsset('${a.id}')">삭제</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="openEditAssetModal('${a.id}')">수정</button>
+        <button class="btn btn-danger btn-sm" onclick="askDeleteAsset('${a.id}')">삭제</button>
+      </td>
     </tr>`;
   }).join('');
+};
+
+let pendingEditAssetId = null;
+window.openEditAssetModal = function(id) {
+  pendingEditAssetId = id;
+  const a = assets.find(x => x.id === id);
+  document.getElementById('ea-name').value = a.name || '';
+  document.getElementById('ea-type').value = a.type || '';
+  document.getElementById('ea-serial').value = a.serial || '';
+  document.getElementById('ea-dept').value = a.dept || '';
+  document.getElementById('ea-note').value = a.note || '';
+  document.getElementById('editAssetModal').classList.add('open');
+};
+
+window.confirmEditAsset = async function() {
+  const name = document.getElementById('ea-name').value.trim();
+  const type = document.getElementById('ea-type').value;
+  if (!name || !type) { toast('자산명과 종류는 필수입니다.', '#e53e3e'); return; }
+  setLoading('btnConfirmEditAsset', true);
+  try {
+    await updateDoc(doc(db, 'assets', pendingEditAssetId), {
+      name,
+      type,
+      serial: document.getElementById('ea-serial').value.trim(),
+      dept: document.getElementById('ea-dept').value.trim(),
+      note: document.getElementById('ea-note').value.trim(),
+    });
+    closeModal('editAssetModal');
+    toast('✅ 자산 정보가 수정되었습니다.');
+  } catch(e) {
+    toast('오류: ' + e.message, '#e53e3e');
+  } finally {
+    setLoading('btnConfirmEditAsset', false);
+  }
 };
 
 let pendingDeleteAssetId = null;
