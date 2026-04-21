@@ -350,12 +350,12 @@
           </select>
         </div>
         <div class="form-group">
-          <label>일련번호 / 자산번호</label>
-          <input id="a-serial" placeholder="예) SN-20240001" />
+          <label>자산번호</label>
+          <input id="a-assetno" placeholder="예) ASSET-001" />
         </div>
         <div class="form-group">
-          <label>담당부서</label>
-          <input id="a-dept" placeholder="예) IT팀" />
+          <label>일련번호</label>
+          <input id="a-serial" placeholder="예) SN-20240001" />
         </div>
         <div class="form-group">
           <label>색상</label>
@@ -377,7 +377,7 @@
     <div class="card">
       <h2>📦 등록된 자산</h2>
       <div class="filter-row">
-        <input id="assetSearch" placeholder="자산명, 일련번호 검색..." oninput="renderAssets()" />
+        <input id="assetSearch" placeholder="자산명, 자산번호, 일련번호 검색..." oninput="renderAssets()" />
         <select id="assetTypeFilter" onchange="renderAssets()">
           <option value="">전체 종류</option>
           <option>노트북</option><option>태블릿</option><option>모니터</option>
@@ -393,7 +393,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>자산명</th><th>종류</th><th>일련번호</th><th>색상</th><th>기기 특징</th><th>담당부서</th><th>상태</th><th>비고</th><th>작업</th></tr></thead>
+          <thead><tr><th>자산명</th><th>종류</th><th>자산번호</th><th>일련번호</th><th>색상</th><th>기기 특징</th><th>상태</th><th>비고</th><th>작업</th></tr></thead>
           <tbody id="assetBody"></tbody>
         </table>
       </div>
@@ -562,12 +562,12 @@
         </select>
       </div>
       <div class="form-group">
-        <label>일련번호 / 자산번호</label>
-        <input id="ea-serial" placeholder="예) SN-20240001" />
+        <label>자산번호</label>
+        <input id="ea-assetno" placeholder="예) ASSET-001" />
       </div>
       <div class="form-group">
-        <label>담당부서</label>
-        <input id="ea-dept" placeholder="예) IT팀" />
+        <label>일련번호</label>
+        <input id="ea-serial" placeholder="예) SN-20240001" />
       </div>
       <div class="form-group">
         <label>색상</label>
@@ -785,14 +785,14 @@ window.addAsset = async function() {
     await addDoc(collection(db, 'assets'), {
       name,
       type,
+      assetno: document.getElementById('a-assetno').value.trim(),
       serial: document.getElementById('a-serial').value.trim(),
-      dept: document.getElementById('a-dept').value.trim(),
       color: document.getElementById('a-color').value.trim(),
       feature: document.getElementById('a-feature').value.trim(),
       note: document.getElementById('a-note').value.trim(),
       createdAt: today(),
     });
-    ['a-name','a-serial','a-dept','a-color','a-feature','a-note'].forEach(id => document.getElementById(id).value = '');
+    ['a-name','a-assetno','a-serial','a-color','a-feature','a-note'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('a-type').value = '';
     toast('✅ 자산이 등록되었습니다.');
   } catch(e) {
@@ -808,7 +808,7 @@ window.renderAssets = function() {
   const statusF = document.getElementById('assetStatusFilter')?.value || '';
 
   let list = assets.filter(a => {
-    const matchSearch = !search || a.name.toLowerCase().includes(search) || (a.serial||'').toLowerCase().includes(search);
+    const matchSearch = !search || a.name.toLowerCase().includes(search) || (a.serial||'').toLowerCase().includes(search) || (a.assetno||'').toLowerCase().includes(search);
     const matchType = !typeF || a.type === typeF;
     const status = getAssetStatus(a.id);
     const matchStatus = !statusF || status === statusF;
@@ -827,10 +827,10 @@ window.renderAssets = function() {
     return `<tr>
       <td><strong>${esc(a.name)}</strong></td>
       <td><span class="badge-type">${esc(a.type)}</span></td>
+      <td style="color:#666;font-size:0.85rem">${esc(a.assetno) || '-'}</td>
       <td style="color:#666;font-size:0.85rem">${esc(a.serial) || '-'}</td>
       <td>${esc(a.color) || '-'}</td>
       <td class="memo-text" title="${esc(a.feature)}">${esc(a.feature) || '-'}</td>
-      <td>${esc(a.dept) || '-'}</td>
       <td><span class="badge-status ${badgeClass}">${status}</span></td>
       <td class="memo-text">${(() => {
         if (status !== '재실') {
@@ -856,8 +856,8 @@ window.openEditAssetModal = function(id) {
   const a = assets.find(x => x.id === id);
   document.getElementById('ea-name').value = a.name || '';
   document.getElementById('ea-type').value = a.type || '';
+  document.getElementById('ea-assetno').value = a.assetno || '';
   document.getElementById('ea-serial').value = a.serial || '';
-  document.getElementById('ea-dept').value = a.dept || '';
   document.getElementById('ea-color').value = a.color || '';
   document.getElementById('ea-feature').value = a.feature || '';
   document.getElementById('ea-note').value = a.note || '';
@@ -873,8 +873,8 @@ window.confirmEditAsset = async function() {
     await updateDoc(doc(db, 'assets', pendingEditAssetId), {
       name,
       type,
+      assetno: document.getElementById('ea-assetno').value.trim(),
       serial: document.getElementById('ea-serial').value.trim(),
-      dept: document.getElementById('ea-dept').value.trim(),
       color: document.getElementById('ea-color').value.trim(),
       feature: document.getElementById('ea-feature').value.trim(),
       note: document.getElementById('ea-note').value.trim(),
@@ -1014,6 +1014,7 @@ window.openAssetDetail = function(assetId, checkoutId) {
       <div style="font-size:1rem;font-weight:700;margin-bottom:10px;color:#1a56db">기기 정보</div>
       ${row('자산명', esc(a.name))}
       ${row('종류', esc(a.type))}
+      ${row('자산번호', esc(a.assetno))}
       ${row('일련번호', esc(a.serial))}
       ${row('색상', esc(a.color))}
       ${row('기기 특징', esc(a.feature))}
@@ -1242,8 +1243,8 @@ window.exportCSV = function(type) {
   let rows = [], filename = '';
   if (type === 'assets') {
     filename = '자산목록.csv';
-    rows = [['자산명','종류','일련번호','담당부서','상태','비고','등록일']];
-    assets.forEach(a => rows.push([a.name, a.type, a.serial, a.dept, getAssetStatus(a.id), a.note, a.createdAt]));
+    rows = [['자산명','종류','자산번호','일련번호','색상','기기특징','상태','비고','등록일']];
+    assets.forEach(a => rows.push([a.name, a.type, a.assetno, a.serial, a.color, a.feature, getAssetStatus(a.id), a.note, a.createdAt]));
   } else if (type === 'checkouts') {
     filename = '반출현황.csv';
     rows = [['자산명','종류','반출자','목적','반출일','반납예정일','상태','메모']];
